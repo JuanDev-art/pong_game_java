@@ -24,6 +24,10 @@ public class main {
 
         window.add(panel);
 
+        //Iniciamos el hilo del juego.
+        Thread gameThread = new Thread(panel);
+        gameThread.start();
+
     }
 
 
