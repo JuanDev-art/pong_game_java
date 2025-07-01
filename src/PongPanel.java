@@ -24,6 +24,12 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
     int playerWidth = 20; //Ancho de la pala.
     int playerHeight = 100; //Alto de la pala.
 
+    //Declaramos las variables de la pala del rival.
+    int rivalX = 730; //Posición horizontal de la pala.
+    int rivalY = 250; //Posición vertical.
+    int rivalWidth = 20; //Ancho de la pala.
+    int rivalHeight = 100; //Alto de la pala.
+
 
     //Constructor.
     public PongPanel(){
@@ -41,6 +47,9 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
 
         //Dibujamos la pala con fillRect.
         g.fillRect(playerX, playerY, playerWidth, playerHeight);
+
+        //Dibujamos la pala del rival.
+        g.fillRect(rivalX, rivalY, rivalWidth, rivalHeight);
 
     }
 
@@ -78,7 +87,25 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
             //Colisión de la pelota con la pala cuando se toquen.
             if (ball.intersects(paddle)){
                 ballSpeedX *= -1;
+                int paddleCenter = playerY + playerHeight/2;
+                int ballCenter = ballY + ballSize/2;
+                int difference = ballCenter - paddleCenter;
+                ballSpeedY = difference/5;
             }
+
+            //Movimiento automático de la pala del rival.
+            if (ballY + ballSize /2 < rivalY + rivalHeight /2){
+                rivalY -= 2; //Sube
+
+            }else if (ballY + ballSize/2 > rivalY + rivalHeight/2){
+                rivalY +=2; //Baja
+
+            }
+
+            //Limitar la pala del rival dentro de los bordes de la pantalla.
+            if (rivalY < 0)rivalY = 0;
+            if (rivalY>PANEL_HEIGHT - rivalHeight)rivalY = PANEL_HEIGHT - rivalHeight;
+
 
             //Volver a dibujar el panel.
             repaint();
