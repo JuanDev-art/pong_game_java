@@ -30,6 +30,12 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
     int rivalWidth = 20; //Ancho de la pala.
     int rivalHeight = 100; //Alto de la pala.
 
+    //Creo una variable para la velocidad de la pala.
+    int paddleSpeed = 25;
+
+    //Creo dos variables booleanas para saber si las teclas se están pulsando.
+    boolean movingUp = true;
+    boolean movingDown = true;
 
     //Constructor.
     public PongPanel(){
@@ -61,6 +67,19 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
         //Este bucle se llama una vez por cada "frame" del juego.
         while (true){
 
+            //Suavizado del movimiento de la pala. Para que no de saltos de pixels.
+            if(movingUp){
+
+                playerY -= paddleSpeed;
+
+            }
+
+            if(movingDown){
+
+                playerY += paddleSpeed;
+            }
+
+
             //Con esto la pelota en cada frame cambiará su movimiento.
             ballX += ballSpeedX;
             ballY += ballSpeedY;
@@ -69,6 +88,9 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
             //usamos .intersects. Lo meto dentro del bucle siempre uso la posición actualizada de la pelota.
             Rectangle ball = new Rectangle(ballX, ballY, ballSize, ballSize);
             Rectangle paddle = new Rectangle(playerX, playerY, playerWidth, playerHeight);
+
+            //Creo la clase Rectangle también con la pala del rival.
+            Rectangle rivalPaddle = new Rectangle(rivalX,rivalY,rivalWidth,rivalHeight);
 
             //Condiciones, para que la bola choque con los bordes de la pantalla.
             if (ballX <= 0 || ballX >= PANEL_WIDTH - ballSize){
@@ -106,6 +128,18 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
             if (rivalY < 0)rivalY = 0;
             if (rivalY>PANEL_HEIGHT - rivalHeight)rivalY = PANEL_HEIGHT - rivalHeight;
 
+            //Colisión de la pelota con la pala del rival cuando se toquen.
+            if (ball.intersects(rivalPaddle)){
+                ballSpeedX *= -1;
+                int rivalPaddleCenter = rivalY + rivalHeight/2;
+                int ballCenter = rivalY + ballSize/2;
+                int difference = ballCenter - rivalPaddleCenter;
+                ballSpeedY = difference/5;
+            }
+
+
+
+
 
             //Volver a dibujar el panel.
             repaint();
@@ -130,18 +164,30 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
     @Override
     public void keyReleased(KeyEvent e){
 
+        //Liberamos las banderas booleanas(movingUp = true && movingDown = true) cuando se pulse la tecla.
+        if (e.getKeyCode()== KeyEvent.VK_W){
+            movingUp = false;
+
+        }
+
+        if (e.getKeyCode()== KeyEvent.VK_S){
+            movingDown = false;
+        }
+
     }
 
     @Override
     public void keyPressed(KeyEvent e){
 
+        //Activamos las banderas booleanas(movingUp = true && movingDown = true) cuando se pulse la tecla.
+
         if (e.getKeyCode()== KeyEvent.VK_W){
-            playerY -= 10;
+            movingUp = true;
 
         }
 
         if (e.getKeyCode()== KeyEvent.VK_S){
-            playerY += 10;
+            movingDown = true;
         }
 
     }
