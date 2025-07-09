@@ -3,26 +3,29 @@ import javax.swing.JFrame;
 public class main {
     public static void main(String[] args) {
 
-        //Creo un objeto JFrame.
-        JFrame window = new JFrame();
+        //Creo el panel del juego.
+        PongPanel panel = new PongPanel();
+        //Tamaño del panel
+        panel.setPreferredSize(new java.awt.Dimension(800,600));
+
+        //Creo un objeto JFrame.(la ventana).
+        JFrame window = new JFrame("Pong's King");
 
         //LLamamos a los métodos.
 
-        //setSize(); (800x600)
-        window.setSize(800, 600);
-
-        //setTitle();
-        window.setTitle("Pong's King");
-
-        //setDefaultCloseOperation(); cuando se pulse "x" se cerrará el programa por completo.
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        //setVisible(); para que la ventana se muestre.
+        //Añado el panel antes de mostrar la ventana.
+        window.getContentPane().add(panel);
+        //Ajusto el tamaño al contenido.
+        window.pack();
+        //Evito redimensionar.
+        window.setResizable(false);
+        //Centro en pantalla.
+        window.setLocationRelativeTo(null);
+        //Muestro la ventana correctamente.
         window.setVisible(true);
 
-        PongPanel panel = new PongPanel();
 
-        window.add(panel);
 
         //Iniciamos el hilo del juego.
         Thread gameThread = new Thread(panel);
