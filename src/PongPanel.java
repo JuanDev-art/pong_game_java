@@ -46,12 +46,23 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
     int playerScore = 0;
     int rivalScore = 0;
 
+    //Fondo animado con estrellas.
+    int numStars = 100;
+    int[] starX = new int[numStars];
+    int[] starY = new int[numStars];
+
     //Constructor.
     public PongPanel(){
         this.setFocusable(true); //Permite que el panel reciba eventos de teclado.
         this.addKeyListener(this); //Le dice que escuche teclas en este panel.
         //Coloco la pelota en el centro desde el principio.
         resetBall();
+
+        //Genero posiciones iniciales aleatorias para las estrellas.
+        for (int i = 0; i < numStars ; i++) {
+            starX[i] = (int) (Math.random() * PANEL_WIDTH);
+            starY[i] = (int) (Math.random() * PANEL_HEIGHT);
+        }
     }
 
     //Creo el método paintComponent() y lo sobrescribo.
@@ -59,24 +70,74 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
     public void paintComponent(Graphics g){
         super.paintComponent(g);
 
-        //Dibujamos la pelota con fillOval.
+        //Cambio el fondo a negro.
+        //.fillRect para dibujar la pala.
+        g.setColor(Color.BLACK);
+        g.fillRect(0,0,getWidth(),getHeight());
+
+        //Dibujar estrellas blancas.
+        g.setColor(Color.WHITE);
+        for (int i = 0 ; i < numStars; i++) {
+            g.fillOval(starX[i], starY[i],2 ,2);
+        }
+
+        //Dibujo una línea central punteada.
+        /*
+        EXPLICACIÓN:
+
+        1. int i = 0; → empezamos en la parte de arriba del campo (posición vertical i = 0).
+
+        2. i < getHeight(); → mientras i esté dentro de la pantalla (por ejemplo, 600 píxeles de alto).
+
+        3. i += 40; → cada vez que dibujamos un trozo, saltamos 40 píxeles hacia abajo.
+        Eso hace que la línea sea punteada, con espacios entre los trozos.
+
+        LO QUE SE DIBUJA DENTRO DEL BUCLE.
+        Esto dibuja un rectángulo blanco (una rayita) en cada vuelta del bucle:
+
+        > getWidth()/2 - 5 → lo pone en el centro horizontal del panel.
+
+        > getWidth()/2 es la mitad del ancho total (el centro).
+
+        > -5 es para ajustarlo al centro, porque el rectángulo mide 10 de ancho (así queda centrado).
+
+        > i → es la posición vertical, que va cambiando con cada vuelta del bucle.
+
+        > 0 → ancho del rectángulo (es una rayita finita).
+
+        > 20 → alto del rectángulo (cada rayita es como una barrita vertical de 20 píxeles).
+
+
+        */
+        g.setColor(Color.WHITE);
+        for (int y = 0 ; y < getHeight();y += 30) {
+            g.fillRect(getWidth()/2 - 2, y, 4, 15);
+        }
+
+        //Dibujo los bordes del campo.
+        //Línea superior.
+        g.fillRect(0,0,getWidth(),5);
+        //Línea inferior.
+        g.fillRect(0,getHeight() - 5, getWidth(), 5);
+
+        //Dibujo palas y pelota en blanco.
+        //Pelota.
         g.fillOval(ballX, ballY, ballSize, ballSize);
-
-        //Dibujamos la pala con fillRect.
+        //Pala. Primero le cambio el color. Después la dibujo.
+        g.setColor(Color.GREEN);
         g.fillRect(playerX, playerY, playerWidth, playerHeight);
-
-        //Dibujamos la pala del rival.
+        //Pala del rival. Primero le cambio el color. Después la dibujo.
+        g.setColor(Color.RED);
         g.fillRect(rivalX, rivalY, rivalWidth, rivalHeight);
 
-        //Mostramos los puntos de los jugadores.
+        //Puntuación.
         g.setFont(new Font("Arial", Font.BOLD, 30));
-        g.drawString("Jugador: " + playerScore, 50 , 50);
-        g.drawString("Rival: " +  rivalScore, PANEL_WIDTH - 200, 50);
+        g.drawString("Player: " + playerScore, 50, 50);
+        g.drawString("Rival: " + rivalScore, PANEL_WIDTH - 200, 50);
 
-        if (waitingForServe){
-
-            g.drawString("Pulsa ESPACIO para continuar", PANEL_WIDTH / 2 - 180, PANEL_HEIGHT / 2);
-
+        //Mensaje de espera.
+        if (waitingForServe) {
+            g.drawString("Pulsa ESPACIO para comenzar", PANEL_WIDTH / 2 - 100, PANEL_HEIGHT / 2);
         }
 
     }
@@ -139,6 +200,18 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
                 resetBall();
                 waitingForServe = true;
 
+
+            }
+
+            //Mover las estrellas hacia abajo.
+            for (int i = 0; i < numStars; i++) {
+                starY[i] += 1;
+
+                //Si la estrella sale por abajo, la subimos arriba de nuevo.
+                if (starY[i] > PANEL_HEIGHT) {
+                    starY[i] = 0;
+                    starX[i] = (int)(Math.random() * PANEL_WIDTH);
+                }
 
             }
 
