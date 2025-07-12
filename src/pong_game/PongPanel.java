@@ -1,7 +1,16 @@
+package pong_game;
+
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.FloatControl;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URL;
 
 public class PongPanel extends JPanel implements Runnable, KeyListener {
 
@@ -37,8 +46,8 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
     int rivalSpeed = 10;
 
     //Creo dos variables booleanas para saber si las teclas se están pulsando.
-    boolean movingUp = true;
-    boolean movingDown = true;
+    boolean movingUp = false;
+    boolean movingDown = false;
 
     //Variables para control de puntuaciones y reinicio de rondas pulsando una tecla.
     //boolean para pausar entre rondas.
@@ -50,6 +59,16 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
     int numStars = 100;
     int[] starX = new int[numStars];
     int[] starY = new int[numStars];
+
+    //Variable de la fuente Orbitron.
+    Font orbitronFont;
+
+    //Variables de efecto de choque de la pelota con la pala.
+    private boolean showImpactEffect = false;
+    private int impactX = 0;
+    private int impactY = 0;
+    private long impactStartTime = 0;
+    private final int IMPACT_DURATION = 100; // número en milisegundos.
 
     //Constructor.
     public PongPanel(){
@@ -63,17 +82,110 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
             starX[i] = (int) (Math.random() * PANEL_WIDTH);
             starY[i] = (int) (Math.random() * PANEL_HEIGHT);
         }
+
+        //Inicio de música de fondo.
+        startBackgroundMusic("pong_game/loopBackground.wav");
     }
+
+    //Creo el método playSound() para reproducir el sonido del juego.
+    private void playSound(String soundFilename){
+        try{
+            URL soundURL = getClass().getResource(("/" + soundFilename));
+            if (soundURL == null) {
+                System.out.println("No se pudo encontrar el archivo de sonido " + soundFilename);
+                return;
+            }
+
+            AudioInputStream audioInput = AudioSystem.getAudioInputStream(soundURL);
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioInput);
+            clip.start();
+
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+
+    }
+
+    //Pongo música de fondo.
+    private Clip backgroundMusic;
+
+    private void startBackgroundMusic(String soundFileName) {
+        try {
+
+            URL soundURL = getClass().getResource("/" + soundFileName);
+            if (soundURL == null) {
+                System.out.println("No se pudo encontrar el archivo de música " + soundFileName);
+                return;
+            }
+
+            AudioInputStream audioInput = AudioSystem.getAudioInputStream(soundURL);
+            backgroundMusic = AudioSystem.getClip();
+            backgroundMusic.open(audioInput);
+
+
+            // Volumen: entre -80.0f (silencio) y 0.0f (volumen máximo original).
+            FloatControl gainControl = (FloatControl) backgroundMusic.getControl(FloatControl.Type.MASTER_GAIN);
+            gainControl.setValue(-10.0f);//Hay que cambiar este valor para ajustar el volumen.
+
+
+
+            backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
+
+
+        }catch (Exception e) {
+            e.printStackTrace();
+
+        }
+
+    }
+
+    //Creo método para poder detener la música.
+    private void stopBackgroundMusic() {
+        if(backgroundMusic != null && backgroundMusic.isRunning()) {
+
+            backgroundMusic.stop();
+            backgroundMusic.close();
+
+        }
+    }
+
+
+
 
     //Creo el método paintComponent() y lo sobrescribo.
     @Override
     public void paintComponent(Graphics g){
+
+        //Limpia el panel antes de dibujar.
         super.paintComponent(g);
 
-        //Cambio el fondo a negro.
-        //.fillRect para dibujar la pala.
-        g.setColor(Color.BLACK);
-        g.fillRect(0,0,getWidth(),getHeight());
+        //Convertimos a Graphics2D.
+        Graphics2D g2 = (Graphics2D) g;
+
+        try{
+            //Cargamos la fuente desde la carpeta "fonts".
+            InputStream is = getClass().getResourceAsStream("/pong_game/resources/Orbitron-VariableFont.ttf");
+            if (is == null) {
+                System.out.println("No se encontró la fuente personalizada");
+                g2.setFont(new Font("Consolas", Font.BOLD, 40));
+            }else {
+                Font orbitron = Font.createFont(Font.TRUETYPE_FONT, is).deriveFont(35f);
+                g2.setFont(orbitron);
+            }
+
+        }catch (Exception e) {
+            e.printStackTrace();
+
+            //Si fallara la fuente usamos una por defecto.
+            g2.setFont(new Font("Consolas",Font.BOLD, 48));
+
+        }
+
+        //Fondo degradado de azul a negro.
+        GradientPaint gp = new GradientPaint(0, 0, Color.BLACK, 0, getHeight(), Color.BLUE);
+        g2.setPaint(gp);
+        g2.fillRect(0, 0, getWidth(), getHeight());
 
         //Dibujar estrellas blancas.
         g.setColor(Color.WHITE);
@@ -131,13 +243,36 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
         g.fillRect(rivalX, rivalY, rivalWidth, rivalHeight);
 
         //Puntuación.
-        g.setFont(new Font("Arial", Font.BOLD, 30));
+        g.setFont(orbitronFont);
+        g.setColor(Color.GREEN);
         g.drawString("Player: " + playerScore, 50, 50);
+        g.setColor(Color.RED);
         g.drawString("Rival: " + rivalScore, PANEL_WIDTH - 200, 50);
 
         //Mensaje de espera.
         if (waitingForServe) {
-            g.drawString("Pulsa ESPACIO para comenzar", PANEL_WIDTH / 2 - 100, PANEL_HEIGHT / 2);
+            String mensaje = "Pulsa ESPACIO  para comenzar";
+            g.setColor(Color.WHITE);
+            g.setFont(orbitronFont);
+            FontMetrics fm = g.getFontMetrics();
+            int textoAncho = fm.stringWidth(mensaje);
+            int x = (getWidth() - textoAncho) / 2;
+            int y = getHeight() / 2;
+
+            g.drawString(mensaje, x, y);
+        }
+
+        //Efecto de colisión de la pelota con la pala.
+        if (showImpactEffect) {
+            long elapsed = System.currentTimeMillis() - impactStartTime;
+            if (elapsed < IMPACT_DURATION) {
+                int size = 20;
+                g2.setColor(Color.YELLOW);
+                g2.setStroke(new BasicStroke(3));
+                g2.drawOval(impactX - size / 2, impactY - size / 2, size, size);
+            }else {
+                showImpactEffect = false;
+            }
         }
 
     }
@@ -187,6 +322,7 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
             if(ballX > PANEL_WIDTH){
 
                 playerScore ++; //Se le suma 1.(Punto).
+                playSound("pong_game/point.wav");
                 resetBall();
                 waitingForServe = true;
 
@@ -197,6 +333,7 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
             if(ballX < 0){
 
                 rivalScore++; //Se le suma 1 al rival. (Punto).
+                playSound("pong_game/point.wav");
                 resetBall();
                 waitingForServe = true;
 
@@ -248,8 +385,17 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
                 int difference = ballCenter - paddleCenter;
                 ballSpeedY = difference/5;
 
+                //Registrar impacto.
+                showImpactEffect = true;
+                impactX = ball.x + ball.width / 2;
+                impactY = ball.y + ball.height / 2;
+                impactStartTime = System.currentTimeMillis();
+
                 //Empujar la pelota fuera de la pala para evitar múltiples colisiones.
                 ballX = playerX + playerWidth + 1;
+
+                //Sonido de la pala al colisionar con la pelota.
+                playSound("pong_game/popPaddle.wav");
             }
 
             //Limitar la pala del rival dentro de los bordes de la pantalla.
@@ -263,6 +409,15 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
                 int ballCenter = ballY + ballSize/2;
                 int difference = ballCenter - rivalPaddleCenter;
                 ballSpeedY = difference/5;
+
+                //Registrar impacto.
+                showImpactEffect = true;
+                impactX = ball.x + ball.width / 2;
+                impactY = ball.y + ball.height / 2;
+                impactStartTime = System.currentTimeMillis();
+
+                //Sonido de la pala al colisionar con la pelota.
+                playSound("pong_game/popPaddle.wav");
             }
 
             //ANTIGUO

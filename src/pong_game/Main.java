@@ -1,6 +1,7 @@
+package pong_game;
 import javax.swing.JFrame;
 
-public class main {
+public class Main {
     public static void main(String[] args) {
 
         //Creo el panel del juego.
@@ -27,7 +28,7 @@ public class main {
 
 
 
-        //Iniciamos el hilo del juego.
+        //Iniciamos el hilo del juego. Que contiene el bucle principal.
         Thread gameThread = new Thread(panel);
         gameThread.start();
 
