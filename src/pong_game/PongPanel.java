@@ -14,6 +14,7 @@ import java.net.URL;
 
 public class PongPanel extends JPanel implements Runnable, KeyListener {
 
+    private final JFrame parentFrame;
     //Declaramos las variables para la posición de la pelota.
     int ballX = 100;
     int ballY = 100;
@@ -71,7 +72,9 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
     private final int IMPACT_DURATION = 100; // número en milisegundos.
 
     //Constructor.
-    public PongPanel(){
+    public PongPanel(JFrame parentFrame){
+        this.parentFrame = parentFrame;
+        setPreferredSize(new Dimension(800, 600));
         this.setFocusable(true); //Permite que el panel reciba eventos de teclado.
         this.addKeyListener(this); //Le dice que escuche teclas en este panel.
         //Coloco la pelota en el centro desde el principio.
@@ -518,5 +521,17 @@ public class PongPanel extends JPanel implements Runnable, KeyListener {
 
         }
 
+        if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+            stopBackgroundMusic(); //Detenemos la música.
+            volverAlMenu(); //Volvemos al menú.
+
+        }
+
     }
+
+    private void volverAlMenu() {
+
+        parentFrame.dispose();
+    }
+
 }
